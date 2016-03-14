@@ -105,7 +105,7 @@ public abstract class AbstractMysqlJobQueue extends JdbcAbstractAccess implement
                 .table(getTableName(request))
                 .setOnNotNull("cron_expression", request.getCronExpression())
                 .setOnNotNull("need_feedback", request.getNeedFeedback())
-                .setOnNotNull("ext_params", JSON.toJSONString(request.getExtParams()))
+                .set("ext_params", JSON.toJSONString(request.getExtParams()))
                 .setOnNotNull("trigger_time", JdbcTypeUtils.toTimestamp(request.getTriggerTime()))
                 .setOnNotNull("priority", request.getPriority())
                 .setOnNotNull("max_retry_times", request.getMaxRetryTimes())

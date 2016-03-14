@@ -29,8 +29,8 @@
                             <div class="col-sm-2">
                                 <select name="nodeType" class="form-control">
                                     <option value="">所有</option>
-                                    <option value="JOB_CLIENT">JobClient</option>
-                                    <option value="TASK_TRACKER">TaskTracker</option>
+                                    <option value="JOB_CLIENT">提交节点</option>
+                                    <option value="TASK_TRACKER">执行节点</option>
                                 </select>
                             </div>
                             <div class="col-sm-1" style="margin-left:10px;width:70px;">
@@ -74,7 +74,7 @@
         <tbody>
         {{each rows as row index}}
         <tr>
-            <td>{{row.nodeType}}</td>
+            <td>{{row.nodeType | format:'nodeTypeLabel',row}}</td>
             <td>{{row.name}}</td>
             <td>{{row.gmtCreated | dateFormat:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{row.opt | format:'optFormat',row}}</td>
@@ -104,6 +104,17 @@
             return '<a href="javascript:;" class="node-group-del-btn" nodeGroup="' + row.name + '" nodeType="' + row.nodeType + '">' +
                     '<span class="label label-primary" style="background-color: #DD6B55;"><i class="fa fa-trash-o"></i> 删除</span></a>';
         }
+
+        LTS.colFormatter.nodeTypeLabel = function(v,row) {
+            if (row['nodeType'] == 'JOB_TRACKER') {
+                return "分发节点";
+            } else if (row['nodeType'] == 'TASK_TRACKER') {
+                return "执行节点";
+            } else if (row['nodeType'] == 'JOB_CLIENT') {
+                return "提交节点";
+            }
+        }
+
         var ltsTable = $("#ltstableContainer").ltsTable({
             url: 'api/node/node-group-get',
             templateId: 'ltstable'

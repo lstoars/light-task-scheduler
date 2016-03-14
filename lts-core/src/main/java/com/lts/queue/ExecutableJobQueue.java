@@ -2,6 +2,7 @@ package com.lts.queue;
 
 import com.lts.queue.domain.JobPo;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -45,4 +46,9 @@ public interface ExecutableJobQueue extends JobQueue{
      * 得到JobPo
      */
     JobPo getJob(String taskTrackerNodeGroup, String taskId);
+
+	/**
+	 * 获取执行时间小于指定时间的任务
+	 */
+	public List<JobPo> getJob(String taskTrackerNodeGroup, Date maxTime);
 }

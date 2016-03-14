@@ -138,7 +138,7 @@
     $(document).ready(function () {
 
         LTS.colFormatter.optFormat = function (v, row) {
-            var logUrl = "job-logger.htm?taskId=" + row.taskId + "&taskTrackerNodeGroup=" + row.taskTrackerNodeGroup;
+            var logUrl = "job-logger.htm?taskId=" + escape(encodeURIComponent(row.taskId)) + "&taskTrackerNodeGroup=" + row.taskTrackerNodeGroup;
             return '<a target="_blank" href="' + logUrl + '"><span class="label label-info"><i class="fa fa-file-code-o"></i> 日志</span></a>&nbsp;';
         }
 

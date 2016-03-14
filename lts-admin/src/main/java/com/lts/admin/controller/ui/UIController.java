@@ -67,10 +67,10 @@ public class UIController {
             startLogTime = DateUtils.addMinute(new Date(), -10);
         }
         model.addAttribute("startLogTime", DateUtils.formatYMD_HMS(startLogTime));
-        if (endLogTime == null) {
-            endLogTime = new Date();
-        }
-        model.addAttribute("endLogTime", DateUtils.formatYMD_HMS(endLogTime));
+//        if (endLogTime == null) {
+//            endLogTime = new Date();
+//        }
+//        model.addAttribute("endLogTime", DateUtils.formatYMD_HMS(endLogTime));
         setAttr(model);
         return "jobLogger";
     }

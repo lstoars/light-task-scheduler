@@ -14,6 +14,7 @@ import com.lts.store.jdbc.builder.UpdateSql;
 import com.lts.store.jdbc.exception.TableNotExistException;
 import com.lts.admin.request.JobQueueReq;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -106,4 +107,15 @@ public class MysqlExecutableJobQueue extends AbstractMysqlJobQueue implements Ex
                 .and("task_tracker_node_group = ?", taskTrackerNodeGroup)
                 .single(RshHolder.JOB_PO_RSH);
     }
+
+	@Override
+	public List<JobPo> getJob(String taskTrackerNodeGroup, Date maxTime) {
+		return new SelectSql(getSqlTemplate())
+				.select()
+				.all()
+				.from()
+				.table(getTableName(taskTrackerNodeGroup))
+				.where("trigger_time < ?", maxTime.getTime())
+				.list(RshHolder.JOB_PO_LIST_RSH);
+	}
 }

@@ -31,6 +31,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
@@ -41,7 +43,8 @@ import java.util.Map;
  */
 @RestController
 public class JobQueueApiController extends AbstractController {
-
+	@Autowired
+	HttpServletRequest servletRequest;
     @Autowired
     AdminAppContext appContext;
     @Autowired
@@ -285,7 +288,17 @@ public class JobQueueApiController extends AbstractController {
 //            response.setMsg(e.getMessage());
 //            return response;
 //        }
-
+		if(request.getEndLogTime() == null) {
+			request.setEndLogTime(new Date());
+		}
+		String taskId = request.getTaskId();
+		if(servletRequest.getMethod().equals("GET") && StringUtils.isNotEmpty(taskId)) {
+			try {
+				request.setTaskId(java.net.URLDecoder.decode(taskId,"UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+		}
         PaginationRsp<JobLogPo> paginationRsp = appContext.getJobLogger().search(request);
         response.setResults(paginationRsp.getResults());
         response.setRows(paginationRsp.getRows());

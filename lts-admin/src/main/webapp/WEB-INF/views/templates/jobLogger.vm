@@ -21,7 +21,7 @@
                             <label class="col-sm-2 control-label">任务ID</label>
 
                             <div class="col-sm-3">
-                                <input type="text" class="form-control" name="taskId" value="$!taskId"
+                                <input type="text" class="form-control" name="taskId" id="taskId" value="$!taskId"
                                        placeholder="请输入你提交的任务ID(TaskId)">
                             </div>
 
@@ -30,13 +30,37 @@
                             <div class="col-sm-3">
                                 <select class="form-control selectpicker" name="taskTrackerNodeGroup">
                                     <option value="">-- 不限 --</option>
-                                    #foreach ($nodeGroup in $taskTrackerNodeGroups)
-                                        #if ($taskTrackerNodeGroup == $nodeGroup.name)
+									#foreach ($nodeGroup in $taskTrackerNodeGroups)
+										#if ($taskTrackerNodeGroup == $nodeGroup.name)
                                             <option value="$nodeGroup.name" selected>$nodeGroup.name</option>
-                                        #else
+										#else
                                             <option value="$nodeGroup.name">$nodeGroup.name</option>
-                                        #end
-                                    #end
+										#end
+									#end
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">日志类型</label>
+                            <div class="col-sm-3">
+                                <select class="form-control selectpicker" name="logType">
+                                    <option value="">-- 不限 --</option>
+                                    <option value="RECEIVE">接受任务</option>
+                                    <option value="SENT">派发任务</option>
+                                    <option value="BIZ">业务日志</option>
+                                    <option value="FINISHED">完成任务</option>
+                                    <option value="FIXED_DEAD">修复死任务</option>
+                                    <option value="DEL">删除</option>
+                                    <option value="SUSPEND">暂停任务</option>
+                                    <option value="RESUME">恢复任务</option>
+                                </select>
+                            </div>
+                            <label class="col-sm-1 control-label">执行结果</label>
+                            <div class="col-sm-3">
+                                <select class="form-control selectpicker" name="success">
+                                    <option value="">-- 不限 --</option>
+                                    <option value="1">成功</option>
+                                    <option value="0">失败</option>
                                 </select>
                             </div>
                         </div>
@@ -44,22 +68,22 @@
                             <label class="col-sm-2 control-label">时间</label>
 
                             <div class="col-sm-2">
-                                <input class="form-control datepicker" type="text" style="width:160px"
+                                <input class="form-control datepicker" type="text" style="width:180px"
                                        id="startLogTime"
                                        name="startLogTime"
                                        date-format="yyyy-MM-dd HH:mm:ss"
                                        placeholder="yyyy-MM-dd HH:mm:ss"
-                                       value="$startLogTime"/>
+                                       value="$!startLogTime"/>
                             </div>
                             <label class="control-label" style="width: 20px;float: left;">到</label>
 
                             <div class="col-sm-3">
-                                <input class="form-control datepicker" type="text" style="width:160px"
+                                <input class="form-control datepicker" type="text" style="width:180px"
                                        id="endLogTime"
                                        name="endLogTime"
                                        date-format="yyyy-MM-dd HH:mm:ss"
                                        placeholder="yyyy-MM-dd HH:mm:ss"
-                                       value="$endLogTime"/>
+                                       value="$!endLogTime"/>
                             </div>
                             <div class="col-sm-2">
                                 <div class="col-sm-2">
@@ -158,7 +182,9 @@
 
 <script>
     $(document).ready(function () {
-
+        if("$!taskId") {
+            $("#taskId").val(decodeURIComponent("$!taskId"));
+        }
         var LOG_TYPE = {
             RECEIVE: '接受任务',
             SENT: '派发任务',
@@ -190,6 +216,8 @@
 //                return;
 //            }
             var taskTrackerNodeGroup = $("select[name='taskTrackerNodeGroup']").val();
+            var success = $("select[name='success']").val();
+            var logType = $("select[name='logType']").val();
             var startLogTime = $("input[name='startLogTime']").val();
             var endLogTime = $("input[name='endLogTime']").val();
             if (!startLogTime) {
@@ -200,19 +228,20 @@
                 sweetAlert("开始查询时间格式不正确", "格式 yyyy-MM-dd HH:mm:ss", "error");
                 return;
             }
-            if (!endLogTime) {
-                sweetAlert("请输入结束查询时间", "格式 yyyy-MM-dd HH:mm:ss", "error");
-                return;
-            }
-            if (!LTS.ReExp.time.test(endLogTime)) {
-                sweetAlert("结束查询时间格式不正确", "格式 yyyy-MM-dd HH:mm:ss", "error");
-                return;
-            }
+//            if (!endLogTime) {
+//                sweetAlert("请输入结束查询时间", "格式 yyyy-MM-dd HH:mm:ss", "error");
+//                return;
+//            }
+//            if (!LTS.ReExp.time.test(endLogTime)) {
+//                sweetAlert("结束查询时间格式不正确", "格式 yyyy-MM-dd HH:mm:ss", "error");
+//                return;
+//            }
 
             var params = {
                 taskId: taskId,
                 taskTrackerNodeGroup: taskTrackerNodeGroup,
-                startLogTime: startLogTime, endLogTime: endLogTime
+                startLogTime: startLogTime, endLogTime: endLogTime,
+                success:success,logType:logType
             };
             if (!taskId) {
                 // 如果没有按ID查询，那么要对时间跨度长的做提醒(超过1小时的)

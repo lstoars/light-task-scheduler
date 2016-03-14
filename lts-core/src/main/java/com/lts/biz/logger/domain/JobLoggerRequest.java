@@ -17,6 +17,10 @@ public class JobLoggerRequest extends PaginationReq {
 
     private Date endLogTime;
 
+	private String logType;
+
+	private Boolean success;
+
     public String getTaskId() {
         return taskId;
     }
@@ -48,4 +52,31 @@ public class JobLoggerRequest extends PaginationReq {
     public void setEndLogTime(Date endLogTime) {
         this.endLogTime = endLogTime;
     }
+
+	public String getLogType() {
+		return logType;
+	}
+
+	public void setLogType(String logType) {
+		this.logType = logType;
+	}
+
+	public Boolean getSuccess() {
+		return success;
+	}
+
+	public String getSuccessStr() {
+		if(success == null) {
+			return null;
+		}
+		if(success) {
+			return "1";
+		} else {
+			return "0";
+		}
+	}
+
+	public void setSuccess(Boolean success) {
+		this.success = success;
+	}
 }

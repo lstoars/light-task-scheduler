@@ -41,9 +41,9 @@
                             <div class="col-sm-2">
                                 <select name="nodeType" class="form-control">
                                     <option value="">所有</option>
-                                    <option value="JOB_CLIENT">JOB_CLIENT</option>
-                                    <option value="TASK_TRACKER">TASK_TRACKER</option>
-                                    <option value="JOB_TRACKER">JOB_TRACKER</option>
+                                    <option value="JOB_CLIENT">提交节点</option>
+                                    <option value="TASK_TRACKER">执行节点</option>
+                                    <option value="JOB_TRACKER">分发节点</option>
                                 </select>
                             </div>
                         </div>
@@ -119,7 +119,7 @@
         <tr>
             <td>{{row.identity}}</td>
             <td>{{row.clusterName}}</td>
-            <td>{{row.nodeType}}</td>
+            <td>{{row.nodeType | format:'nodeTypeLabel',row}}</td>
             <td>{{row.group}}</td>
             <td>{{row.createTime | dateFormat:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{row.ip | format:'ipLabel',row}}</td>
@@ -154,6 +154,16 @@
                 return row['hostName'] + "<br/>(" + row['ip'] + ":" + row['port'] + ")";
             }
             return row['hostName'] + "<br/>(" + row['ip'] + ")";
+        }
+
+        LTS.colFormatter.nodeTypeLabel = function(v,row) {
+            if (row['nodeType'] == 'JOB_TRACKER') {
+                return "分发节点";
+            } else if (row['nodeType'] == 'TASK_TRACKER') {
+                return "执行节点";
+            } else if (row['nodeType'] == 'JOB_CLIENT') {
+                return "提交节点";
+            }
         }
 
         LTS.colFormatter.threadLabel = function (v, row) {

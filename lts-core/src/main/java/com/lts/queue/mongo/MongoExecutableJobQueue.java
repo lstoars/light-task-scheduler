@@ -19,6 +19,7 @@ import com.mongodb.WriteResult;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -127,4 +128,12 @@ public class MongoExecutableJobQueue extends AbstractMongoJobQueue implements Ex
                 field("taskTrackerNodeGroup").equal(taskTrackerNodeGroup);
         return query.get();
     }
+
+	@Override
+	public List<JobPo> getJob(String taskTrackerNodeGroup, Date maxTime) {
+		String tableName = JobQueueUtils.getExecutableQueueName(taskTrackerNodeGroup);
+		Query<JobPo> query = template.createQuery(tableName, JobPo.class);
+		query.filter("triggerTime < ", maxTime.getTime());
+		return query.asList();
+	}
 }

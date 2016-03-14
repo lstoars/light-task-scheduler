@@ -102,10 +102,10 @@ public abstract class AbstractMysqlJobQueue extends JdbcAbstractAccess implement
                 .update(getTableName(request))
                 .setOnNotNull("cron_expression", request.getCronExpression())
                 .setOnNotNull("need_feedback", request.getNeedFeedback())
-                .setOnNotNull("ext_params", JSON.toJSONString(request.getExtParams()))
+                .set("ext_params", JSON.toJSONString(request.getExtParams()))
                 .setOnNotNull("trigger_time", JdbcTypeUtils.toTimestamp(request.getTriggerTime()))
                 .setOnNotNull("priority", request.getPriority())
-                .setOnNotNull("submit_node_group", request.getSubmitNodeGroup())
+                .set("submit_node_group", request.getSubmitNodeGroup())
                 .setOnNotNull("task_tracker_node_group", request.getTaskTrackerNodeGroup())
                 .where("job_id=?", request.getJobId())
                 .doUpdate() == 1;

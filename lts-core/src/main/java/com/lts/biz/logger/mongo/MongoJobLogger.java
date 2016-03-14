@@ -61,6 +61,12 @@ public class MongoJobLogger extends MongoRepository implements JobLogger {
         if (request.getEndLogTime() != null) {
             query.filter("logTime <= ", getTimestamp(request.getEndLogTime()));
         }
+		if (StringUtils.isNotEmpty(request.getLogType())) {
+			query.field("logType").equals(request.getLogType());
+		}
+		if (request.getSuccess() != null) {
+			query.field("success").equals(request.getSuccess().booleanValue());
+		}
         PaginationRsp<JobLogPo> paginationRsp = new PaginationRsp<JobLogPo>();
         Long results = template.getCount(query);
         paginationRsp.setResults(results.intValue());

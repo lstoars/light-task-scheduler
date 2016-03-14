@@ -33,6 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
@@ -46,6 +48,8 @@ public class JobQueueApi extends AbstractMVC {
 
     @Autowired
     private BackendAppContext appContext;
+	@Autowired
+	private HttpServletRequest servletRequest;
 
     @RequestMapping("/job-queue/cron-job-get")
     public RestfulResponse cronJobGet(JobQueueReq request) {

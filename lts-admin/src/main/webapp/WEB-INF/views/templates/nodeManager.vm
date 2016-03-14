@@ -210,7 +210,9 @@
                 return "执行节点";
             } else if (row['nodeType'] == 'JOB_CLIENT') {
                 return "提交节点";
-            }
+            } else if (row['nodeType'] == 'MONITOR') {
+				return "监控节点"
+			}
         };
 
         LTS.colFormatter.threadLabel = function (v, row) {

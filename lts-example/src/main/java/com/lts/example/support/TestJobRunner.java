@@ -4,7 +4,6 @@ import com.lts.core.domain.Action;
 import com.lts.core.domain.Job;
 import com.lts.core.logger.Logger;
 import com.lts.core.logger.LoggerFactory;
-import com.lts.core.support.SystemClock;
 import com.lts.tasktracker.Result;
 import com.lts.tasktracker.logger.BizLogger;
 import com.lts.tasktracker.runner.JobRunner;
@@ -16,7 +15,7 @@ import com.lts.tasktracker.runner.LtsLoggerFactory;
 public class TestJobRunner implements JobRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestJobRunner.class);
-    private final static BizLogger bizLogger = LtsLoggerFactory.getBizLogger();
+    private final BizLogger bizLogger = LtsLoggerFactory.getBizLogger();
 
     @Override
     public Result run(Job job) throws Throwable {
@@ -35,6 +34,8 @@ public class TestJobRunner implements JobRunner {
             LOGGER.info("我要执行：" + job);
             // 会发送到 LTS (JobTracker上)
             bizLogger.info("测试，业务日志啊啊啊啊啊");
+
+//            Thread.sleep(60 * 1000);
 
         } catch (Exception e) {
             LOGGER.info("Run job failed!", e);

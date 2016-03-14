@@ -31,6 +31,7 @@ public abstract class AbstractMysqlJobQueue extends JdbcAbstractAccess implement
                 .columns("job_id",
                         "priority",
                         "retry_times",
+                        "max_retry_times",
                         "task_id",
                         "gmt_created",
                         "gmt_modified",
@@ -45,6 +46,7 @@ public abstract class AbstractMysqlJobQueue extends JdbcAbstractAccess implement
                 .values(jobPo.getJobId(),
                         jobPo.getPriority(),
                         jobPo.getRetryTimes(),
+                        jobPo.getMaxRetryTimes(),
                         jobPo.getTaskId(),
                         jobPo.getGmtCreated(),
                         jobPo.getGmtModified(),
@@ -99,13 +101,15 @@ public abstract class AbstractMysqlJobQueue extends JdbcAbstractAccess implement
             throw new JdbcException("Only allow update by jobId");
         }
         return new UpdateSql(getSqlTemplate())
-                .update(getTableName(request))
+                .update()
+                .table(getTableName(request))
                 .setOnNotNull("cron_expression", request.getCronExpression())
                 .setOnNotNull("need_feedback", request.getNeedFeedback())
-                .set("ext_params", JSON.toJSONString(request.getExtParams()))
+                .setOnNotNull("ext_params", JSON.toJSONString(request.getExtParams()))
                 .setOnNotNull("trigger_time", JdbcTypeUtils.toTimestamp(request.getTriggerTime()))
                 .setOnNotNull("priority", request.getPriority())
-                .set("submit_node_group", request.getSubmitNodeGroup())
+                .setOnNotNull("max_retry_times", request.getMaxRetryTimes())
+                .setOnNotNull("submit_node_group", request.getSubmitNodeGroup())
                 .setOnNotNull("task_tracker_node_group", request.getTaskTrackerNodeGroup())
                 .where("job_id=?", request.getJobId())
                 .doUpdate() == 1;

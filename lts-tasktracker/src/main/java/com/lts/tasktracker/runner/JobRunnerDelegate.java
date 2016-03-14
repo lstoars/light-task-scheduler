@@ -12,7 +12,7 @@ import com.lts.tasktracker.domain.Response;
 import com.lts.tasktracker.domain.TaskTrackerAppContext;
 import com.lts.tasktracker.logger.BizLoggerAdapter;
 import com.lts.tasktracker.logger.BizLoggerFactory;
-import com.lts.tasktracker.monitor.TaskTrackerMonitor;
+import com.lts.tasktracker.monitor.TaskTrackerMStatReporter;
 import sun.nio.ch.Interruptible;
 
 import java.io.PrintWriter;
@@ -34,10 +34,11 @@ public class JobRunnerDelegate implements Runnable {
     private RunnerCallback callback;
     private BizLoggerAdapter logger;
     private TaskTrackerAppContext appContext;
-    private TaskTrackerMonitor monitor;
+    private TaskTrackerMStatReporter stat;
     private Interruptible interruptor;
     private JobRunner curJobRunner;
     private AtomicBoolean interrupted = new AtomicBoolean(false);
+    private Thread thread;
 
     public JobRunnerDelegate(TaskTrackerAppContext appContext,
                              JobWrapper jobWrapper, RunnerCallback callback) {
@@ -48,7 +49,7 @@ public class JobRunnerDelegate implements Runnable {
         this.logger = (BizLoggerAdapter) BizLoggerFactory.getLogger(
                 appContext.getBizLogLevel(),
                 appContext.getRemotingClient(), appContext);
-        monitor = (TaskTrackerMonitor) appContext.getMonitor();
+        stat = (TaskTrackerMStatReporter) appContext.getMStatReporter();
 
         this.interruptor = new InterruptibleAdapter() {
             public void interrupt() {
@@ -59,6 +60,9 @@ public class JobRunnerDelegate implements Runnable {
 
     @Override
     public void run() {
+
+        thread = Thread.currentThread();
+
         try {
             blockedOn(interruptor);
             if (Thread.currentThread().isInterrupted()) {
@@ -75,7 +79,7 @@ public class JobRunnerDelegate implements Runnable {
                 response.setJobWrapper(jobWrapper);
                 try {
                     appContext.getRunnerPool().getRunningJobManager()
-                            .in(jobWrapper.getJobId());
+                            .in(jobWrapper.getJobId(), this);
                     this.curJobRunner = appContext.getRunnerPool().getRunnerFactory().newRunner();
                     Result result = this.curJobRunner.run(jobWrapper.getJob());
 
@@ -91,7 +95,7 @@ public class JobRunnerDelegate implements Runnable {
                     }
 
                     long time = SystemClock.now() - startTime;
-                    monitor.addRunningTime(time);
+                    stat.addRunningTime(time);
                     LOGGER.info("Job execute completed : {}, time:{} ms.", jobWrapper, time);
                 } catch (Throwable t) {
                     StringWriter sw = new StringWriter();
@@ -99,19 +103,17 @@ public class JobRunnerDelegate implements Runnable {
                     response.setAction(Action.EXECUTE_EXCEPTION);
                     response.setMsg(sw.toString());
                     long time = SystemClock.now() - startTime;
-                    monitor.addRunningTime(time);
+                    stat.addRunningTime(time);
                     LOGGER.info("Job execute error : {}, time: {}, {}", jobWrapper, time, t.getMessage(), t);
                 } finally {
+                    checkInterrupted();
                     logger.removeId();
                     appContext.getRunnerPool().getRunningJobManager()
                             .out(jobWrapper.getJobId());
                 }
                 // 统计数据
-                try {
-                    monitor(response.getAction());
-                } catch (Throwable t) {
-                    LOGGER.warn("monitor error:" + t.getMessage(), t);
-                }
+                stat(response.getAction());
+
                 if (isStopToGetNewJob()) {
                     response.setReceiveNewJob(false);
                 }
@@ -138,22 +140,22 @@ public class JobRunnerDelegate implements Runnable {
         return this.interrupted.get();
     }
 
-    private void monitor(Action action) {
+    private void stat(Action action) {
         if (action == null) {
             return;
         }
         switch (action) {
             case EXECUTE_SUCCESS:
-                monitor.incSuccessNum();
+                stat.incSuccessNum();
                 break;
             case EXECUTE_FAILED:
-                monitor.incFailedNum();
+                stat.incFailedNum();
                 break;
             case EXECUTE_LATER:
-                monitor.incExeLaterNum();
+                stat.incExeLaterNum();
                 break;
             case EXECUTE_EXCEPTION:
-                monitor.incExeExceptionNum();
+                stat.incExeExceptionNum();
                 break;
         }
     }
@@ -162,7 +164,7 @@ public class JobRunnerDelegate implements Runnable {
         sun.misc.SharedSecrets.getJavaLangAccess().blockedOn(Thread.currentThread(), interruptible);
     }
 
-    public abstract class InterruptibleAdapter implements Interruptible {
+    private abstract class InterruptibleAdapter implements Interruptible {
         // for > jdk7
         public void interrupt(Thread thread) {
             interrupt();
@@ -177,7 +179,24 @@ public class JobRunnerDelegate implements Runnable {
             return true;
         }
         // 机器资源是否充足
-        return !appContext.getConfig().getParameter(Constants.MACHINE_RES_ENOUGH, true);
+        return !appContext.getConfig().getInternalData(Constants.MACHINE_RES_ENOUGH, true);
     }
 
+    private void checkInterrupted() {
+        try {
+            if (isInterrupted()) {
+                logger.info("Interrupted");
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("checkInterrupted error", t);
+        }
+    }
+
+    public Thread currentThread() {
+        return thread;
+    }
+
+    public JobWrapper currentJob() {
+        return jobWrapper;
+    }
 }

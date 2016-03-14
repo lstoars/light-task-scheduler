@@ -31,7 +31,7 @@ public abstract class MemoryAccess {
         sqlTemplate = SqlTemplateFactory.create(config);
     }
 
-    public SqlTemplate getSqlTemplate() {
+    protected SqlTemplate getSqlTemplate() {
         return sqlTemplate;
     }
 
@@ -42,11 +42,6 @@ public abstract class MemoryAccess {
         } catch (IOException e) {
             throw new LtsRuntimeException("Read sql file : [" + path + "] error ", e);
         }
-    }
-
-    protected String readSqlFile(String path, String tableName) {
-        String sql = readSqlFile(path);
-        return sql.replace("{tableName}", tableName);
     }
 
     protected void createTable(String sql) throws JdbcException {

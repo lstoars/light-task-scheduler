@@ -70,10 +70,11 @@ public abstract class AbstractMongoJobQueue extends MongoRepository implements J
         UpdateOperations<JobPo> operations = template.createUpdateOperations(JobPo.class);
         addUpdateField(operations, "cronExpression", request.getCronExpression());
         addUpdateField(operations, "needFeedback", request.getNeedFeedback());
-		addUpdateField(operations, "extParams", request.getExtParams(), false);
+        addUpdateField(operations, "extParams", request.getExtParams());
         addUpdateField(operations, "triggerTime", request.getTriggerTime() == null ? null : request.getTriggerTime().getTime());
         addUpdateField(operations, "priority", request.getPriority());
-		addUpdateField(operations, "submitNodeGroup", request.getSubmitNodeGroup(), false);
+        addUpdateField(operations, "maxRetryTimes", request.getMaxRetryTimes());
+        addUpdateField(operations, "submitNodeGroup", request.getSubmitNodeGroup());
         addUpdateField(operations, "taskTrackerNodeGroup", request.getTaskTrackerNodeGroup());
 
         UpdateResults ur = template.update(query, operations);
@@ -81,31 +82,26 @@ public abstract class AbstractMongoJobQueue extends MongoRepository implements J
     }
 
     private Query<JobPo> addCondition(Query<JobPo> query, String field, Object o) {
-		if (!checkCondition(o, true)) {
-			return query;
-		}
+        if (!checkCondition(o)) {
+            return query;
+        }
         query.field(field).equal(o);
         return query;
     }
 
     private UpdateOperations<JobPo> addUpdateField(UpdateOperations<JobPo> operations, String field, Object o) {
-		return addUpdateField(operations, field, o, true);
+        if (!checkCondition(o)) {
+            return operations;
+        }
+        operations.set(field, o);
+        return operations;
     }
 
-	private UpdateOperations<JobPo> addUpdateField(UpdateOperations<JobPo> operations, String field, Object o,
-			boolean checkNull) {
-		if (!checkCondition(o, checkNull)) {
-			return operations;
-		}
-		operations.set(field, o);
-		return operations;
-	}
-
-    private boolean checkCondition(Object obj,boolean checkNull) {
-        if (obj == null && checkNull) {
+    private boolean checkCondition(Object obj) {
+        if (obj == null) {
             return false;
         } else if (obj instanceof String) {
-            if (StringUtils.isEmpty((String) obj) && checkNull) {
+            if (StringUtils.isEmpty((String) obj)) {
                 return false;
             }
         } else if (

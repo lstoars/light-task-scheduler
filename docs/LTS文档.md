@@ -4,7 +4,7 @@ LTS(light-task-scheduler)主要用于解决分布式任务调度问题，支持�
 
 ## 项目地址
 github地址:
-[https://github.com/qq254963746/light-task-scheduler](https://github.com/qq254963746/light-task-scheduler)
+[https://github.com/ltsopensource/light-task-scheduler](https://github.com/ltsopensource/light-task-scheduler)
 
 oschina地址:
 [http://git.oschina.net/hugui/light-task-scheduler](http://git.oschina.net/hugui/light-task-scheduler)
@@ -289,7 +289,6 @@ public class LTSSpringConfig implements ApplicationContextAware {
 |zk.client|可选|zkclient|JobClient,JobTracker,TaskTracker|addConfig("zk.client", "xxx")|zookeeper客户端,可选值zkclient, curator|
 |job.pull.frequency|可选|3|TaskTracker|addConfig("job.pull.frequency", "xx")|TaskTracker去向JobTracker Pull任务的频率，针对不同的场景可以做相应的调整，单位秒|
 |job.max.retry.times|可选|10|JobTracker|addConfig("job.max.retry.times", "xx")|任务的最大重试次数|
-|lts.monitor.url|可选|无|JobTracker,TaskTracker|addConfig("lts.monitor.url", "xx")|监控中心地址，也就是LTS-Admin地址，如 http://localhost:8081|
 |stop.working|可选|false|TaskTracker|addConfig("stop.working", "true")|主要用于当TaskTracker与JobTracker出现网络隔离的时候，超过一定时间隔离之后，TaskTracker自动停止当前正在运行的任务|
 
 

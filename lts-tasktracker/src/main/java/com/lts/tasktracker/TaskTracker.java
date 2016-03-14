@@ -4,10 +4,11 @@ import com.lts.core.cluster.AbstractClientNode;
 import com.lts.core.constant.Constants;
 import com.lts.core.constant.Level;
 import com.lts.remoting.RemotingProcessor;
+import com.lts.tasktracker.cmd.JobTerminateCmd;
 import com.lts.tasktracker.domain.TaskTrackerAppContext;
 import com.lts.tasktracker.domain.TaskTrackerNode;
 import com.lts.tasktracker.monitor.StopWorkingMonitor;
-import com.lts.tasktracker.monitor.TaskTrackerMonitor;
+import com.lts.tasktracker.monitor.TaskTrackerMStatReporter;
 import com.lts.tasktracker.processor.RemotingDispatcher;
 import com.lts.tasktracker.runner.JobRunner;
 import com.lts.tasktracker.runner.RunnerFactory;
@@ -21,7 +22,7 @@ import com.lts.tasktracker.support.JobPullMachine;
 public class TaskTracker extends AbstractClientNode<TaskTrackerNode, TaskTrackerAppContext> {
 
     public TaskTracker() {
-        appContext.setMonitor(new TaskTrackerMonitor(appContext));
+        appContext.setMStatReporter(new TaskTrackerMStatReporter(appContext));
     }
 
     @Override
@@ -31,11 +32,14 @@ public class TaskTracker extends AbstractClientNode<TaskTrackerNode, TaskTracker
         appContext.setRunnerPool(new RunnerPool(appContext));
         appContext.setJobPullMachine(new JobPullMachine(appContext));
         appContext.setStopWorkingMonitor(new StopWorkingMonitor(appContext));
+
+        appContext.getHttpCmdServer().registerCommands(
+                new JobTerminateCmd(appContext));     // 终止某个正在执行的任务
     }
 
     @Override
     protected void afterStart() {
-        appContext.getMonitor().start();
+        appContext.getMStatReporter().start();
         if (config.getParameter(Constants.TASK_TRACKER_STOP_WORKING_SWITCH, false)) {
             appContext.getStopWorkingMonitor().start();
         }
@@ -43,7 +47,7 @@ public class TaskTracker extends AbstractClientNode<TaskTrackerNode, TaskTracker
 
     @Override
     protected void afterStop() {
-        appContext.getMonitor().stop();
+        appContext.getMStatReporter().stop();
         appContext.getStopWorkingMonitor().stop();
     }
 

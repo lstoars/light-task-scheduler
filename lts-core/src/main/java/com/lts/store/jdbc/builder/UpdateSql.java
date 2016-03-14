@@ -26,14 +26,21 @@ public class UpdateSql {
         this.sqlTemplate = sqlTemplate;
     }
 
-    public UpdateSql update(String table) {
-        sql.append("UPDATE ").append("`").append(table).append("`").append(" SET ");
+    public UpdateSql update() {
+        sql.append("UPDATE ");
+        return this;
+    }
+
+    public UpdateSql table(String table) {
+        sql.append(" `").append(table).append("` ");
         return this;
     }
 
     public UpdateSql set(String column, Object value) {
         if (params.size() > 0) {
             sql.append(",");
+        } else {
+            sql.append(" SET ");
         }
         sql.append("`").append(column).append("`").append(" = ? ");
         params.add(value);
@@ -45,6 +52,11 @@ public class UpdateSql {
             return this;
         }
         return set(column, value);
+    }
+
+    public UpdateSql where() {
+        sql.append(" WHERE ");
+        return this;
     }
 
     public UpdateSql whereSql(WhereSql whereSql) {
@@ -95,14 +107,14 @@ public class UpdateSql {
         return or(condition, value);
     }
 
-    public UpdateSql andOnNotEmpty(String condition, String value){
+    public UpdateSql andOnNotEmpty(String condition, String value) {
         if (StringUtils.isEmpty(value)) {
             return this;
         }
         return and(condition, value);
     }
 
-    public UpdateSql orOnNotEmpty(String condition, String value){
+    public UpdateSql orOnNotEmpty(String condition, String value) {
         if (StringUtils.isEmpty(value)) {
             return this;
         }
@@ -161,7 +173,7 @@ public class UpdateSql {
         String finalSQL = getSQL();
         try {
 
-            if(LOGGER.isDebugEnabled()){
+            if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(SQLFormatter.format(finalSQL));
             }
 

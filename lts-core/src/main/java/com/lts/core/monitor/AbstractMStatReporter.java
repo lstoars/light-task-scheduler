@@ -1,21 +1,16 @@
 package com.lts.core.monitor;
 
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.lts.core.AppContext;
 import com.lts.core.cluster.Config;
 import com.lts.core.cluster.NodeType;
-import com.lts.core.commons.file.FileUtils;
 import com.lts.core.domain.monitor.MData;
 import com.lts.core.factory.NamedThreadFactory;
 import com.lts.core.logger.Logger;
 import com.lts.core.logger.LoggerFactory;
 import com.lts.jvmmonitor.JVMMonitor;
-
-import java.io.File;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Robert HG (254963746@qq.com) on 8/30/15.
@@ -41,6 +36,11 @@ public abstract class AbstractMStatReporter implements MStatReporter {
 
         // 启动JVM监控
         JVMMonitor.start();
+
+		boolean enabled = config.getParameter("stat.report.enabled", false);
+		if (!enabled) {
+			return;
+		}
 
         try {
             if (start.compareAndSet(false, true)) {

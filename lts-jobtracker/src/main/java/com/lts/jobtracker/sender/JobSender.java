@@ -2,14 +2,14 @@ package com.lts.jobtracker.sender;
 
 import com.lts.biz.logger.domain.JobLogPo;
 import com.lts.biz.logger.domain.LogType;
-import com.lts.core.json.JSON;
 import com.lts.core.constant.Level;
+import com.lts.core.json.JSON;
 import com.lts.core.logger.Logger;
 import com.lts.core.logger.LoggerFactory;
+import com.lts.core.support.JobDomainConverter;
 import com.lts.core.support.LoggerName;
 import com.lts.core.support.SystemClock;
 import com.lts.jobtracker.domain.JobTrackerAppContext;
-import com.lts.core.support.JobDomainConverter;
 import com.lts.queue.domain.JobPo;
 import com.lts.store.jdbc.exception.DupEntryException;
 
@@ -48,7 +48,12 @@ public class JobSender {
         }
         appContext.getExecutableJobQueue().remove(jobPo.getTaskTrackerNodeGroup(), jobPo.getJobId());
 
-        SendResult sendResult = invoker.invoke(jobPo);
+		SendResult sendResult = new SendResult(false, "DEFAULT FALSE");
+		try {
+			sendResult = invoker.invoke(jobPo);
+		} catch (Exception e) {
+			LOGGER.error("JobSender@send error,job:" + JSON.toJSONString(jobPo),e);
+		}
 
         if (sendResult.isSuccess()) {
             // 记录日志
@@ -58,7 +63,30 @@ public class JobSender {
             jobLogPo.setLogTime(SystemClock.now());
             jobLogPo.setLevel(Level.INFO);
             appContext.getJobLogger().log(jobLogPo);
-        }
+        } else {
+			// 记录日志
+			JobLogPo jobLogPo = JobDomainConverter.convertJobLog(jobPo);
+			jobLogPo.setSuccess(false);
+			jobLogPo.setLogType(LogType.SENT);
+			jobLogPo.setLogTime(SystemClock.now());
+			jobLogPo.setLevel(Level.INFO);
+			appContext.getJobLogger().log(jobLogPo);
+
+			// 队列切回来
+			boolean needResume = true;
+			try {
+				jobPo.setIsRunning(true);
+				jobPo.setGmtModified(SystemClock.now());
+				appContext.getExecutableJobQueue().add(jobPo);
+			} catch (DupEntryException e) {
+				LOGGER.warn("ExecutableJobQueue already exist:" + JSON.toJSONString(jobPo));
+				needResume = false;
+			}
+			appContext.getExecutingJobQueue().remove(jobPo.getJobId());
+			if (needResume) {
+				appContext.getExecutableJobQueue().resume(jobPo);
+			}
+		}
 
         return sendResult;
     }

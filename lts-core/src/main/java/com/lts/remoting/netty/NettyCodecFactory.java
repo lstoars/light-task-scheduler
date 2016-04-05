@@ -1,5 +1,7 @@
 package com.lts.remoting.netty;
 
+import java.nio.ByteBuffer;
+
 import com.lts.core.constant.Constants;
 import com.lts.core.logger.Logger;
 import com.lts.core.logger.LoggerFactory;
@@ -7,13 +9,12 @@ import com.lts.remoting.Channel;
 import com.lts.remoting.codec.Codec;
 import com.lts.remoting.common.RemotingHelper;
 import com.lts.remoting.protocol.RemotingCommand;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
-
-import java.nio.ByteBuffer;
 
 /**
  * @author Robert HG (254963746@qq.com) on 11/5/15.
@@ -74,7 +75,8 @@ public class NettyCodecFactory {
                 return codec.decode(byteBuffer);
             } catch (Exception e) {
                 Channel channel = new NettyChannel(ctx);
-                LOGGER.error("decode exception, {}", RemotingHelper.parseChannelRemoteAddr(channel), e);
+				LOGGER.error("decode exception,frame_max_length:{}, {}", FRAME_MAX_LENGTH,
+						RemotingHelper.parseChannelRemoteAddr(channel), e);
                 // 这里关闭后， 会在pipeline中产生事件，通过具体的close事件来清理数据结构
                 RemotingHelper.closeChannel(channel);
             }

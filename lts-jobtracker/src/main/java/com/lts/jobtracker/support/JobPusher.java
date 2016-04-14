@@ -109,6 +109,8 @@ public class JobPusher {
                 case SENT_ERROR:
                     // TaskTracker链接失败
                     return;
+				case SYSTEM_ERROR:
+					return;
             }
         }
     }
@@ -122,75 +124,71 @@ public class JobPusher {
         final String identity = taskTrackerNode.getIdentity();
 
         JobSender.SendResult sendResult = appContext.getJobSender().send(nodeGroup, identity, new JobSender.SendInvoker() {
-            @Override
-            public JobSender.SendResult invoke(final JobPo jobPo) {
+			@Override
+			public JobSender.SendResult invoke(final JobPo jobPo) {
 
-                // 发送给TaskTracker执行
-                JobPushRequest body = appContext.getCommandBodyWrapper().wrapper(new JobPushRequest());
-                body.setJobWrapper(JobDomainConverter.convert(jobPo));
-                RemotingCommand commandRequest = RemotingCommand.createRequestCommand(JobProtos.RequestCode.PUSH_JOB.code(), body);
+				// 发送给TaskTracker执行
+				JobPushRequest body = appContext.getCommandBodyWrapper().wrapper(new JobPushRequest());
+				body.setJobWrapper(JobDomainConverter.convert(jobPo));
+				RemotingCommand commandRequest = RemotingCommand.createRequestCommand(JobProtos.RequestCode.PUSH_JOB.code(), body);
 
-                // 是否分发推送任务成功
-                final Holder<Boolean> pushSuccess = new Holder<Boolean>(false);
+				// 是否分发推送任务成功
+				final Holder<Boolean> pushSuccess = new Holder<Boolean>(false);
 
-                final CountDownLatch latch = new CountDownLatch(1);
-                try {
-                    remotingServer.invokeAsync(taskTrackerNode.getChannel().getChannel(), commandRequest, new AsyncCallback() {
-                        @Override
-                        public void operationComplete(ResponseFuture responseFuture) {
-                            try {
-                                RemotingCommand responseCommand = responseFuture.getResponseCommand();
-                                if (responseCommand == null) {
-                                    LOGGER.warn("Job push failed! response command is null!");
-                                    return;
-                                }
-                                if (responseCommand.getCode() == JobProtos.ResponseCode.JOB_PUSH_SUCCESS.code()) {
-                                    if (LOGGER.isDebugEnabled()) {
-                                        LOGGER.debug("Job push success! nodeGroup=" + nodeGroup + ", identity=" + identity + ", job=" + jobPo);
-                                    }
-                                    pushSuccess.set(true);
-                                }
-                            } finally {
-                                latch.countDown();
-                            }
-                        }
-                    });
+				final CountDownLatch latch = new CountDownLatch(1);
+				try {
+					remotingServer.invokeAsync(taskTrackerNode.getChannel().getChannel(), commandRequest, new AsyncCallback() {
+						@Override
+						public void operationComplete(ResponseFuture responseFuture) {
+							try {
+								RemotingCommand responseCommand = responseFuture.getResponseCommand();
+								if (responseCommand == null) {
+									LOGGER.warn("Job push failed! response command is null!");
+									return;
+								}
+								if (responseCommand.getCode() == JobProtos.ResponseCode.JOB_PUSH_SUCCESS.code()) {
+									LOGGER.info("Job push success! nodeGroup=" + nodeGroup + ", identity=" + identity + ", job=" + jobPo);
+									pushSuccess.set(true);
+								}
+							} finally {
+								latch.countDown();
+							}
+						}
+					});
 
-                } catch (RemotingSendException e) {
-                    LOGGER.error("Remoting send error, jobPo={}", jobPo, e);
-                    return new JobSender.SendResult(false, JobPushResult.SENT_ERROR);
-                }
+				} catch (RemotingSendException e) {
+					LOGGER.error("Remoting send error, jobPo={}", jobPo, e);
+					return new JobSender.SendResult(false, JobPushResult.SYSTEM_ERROR);
+				}
 
-                try {
-                    latch.await(Constants.LATCH_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    throw new RequestTimeoutException(e);
-                }
+				try {
+					latch.await(Constants.LATCH_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException e) {
+					throw new RequestTimeoutException(e);
+				}
 
-                if (!pushSuccess.get()) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Job push failed! nodeGroup=" + nodeGroup + ", identity=" + identity + ", job=" + jobPo);
-                    }
-                    // 队列切回来
-                    boolean needResume = true;
-                    try {
-                        jobPo.setIsRunning(true);
-                        jobPo.setGmtModified(SystemClock.now());
-                        appContext.getExecutableJobQueue().add(jobPo);
-                    } catch (DupEntryException e) {
-                        LOGGER.warn("ExecutableJobQueue already exist:" + JSON.toJSONString(jobPo));
-                        needResume = false;
-                    }
-                    appContext.getExecutingJobQueue().remove(jobPo.getJobId());
-                    if (needResume) {
-                        appContext.getExecutableJobQueue().resume(jobPo);
-                    }
-                    return new JobSender.SendResult(false, JobPushResult.SENT_ERROR);
-                }
+				if (!pushSuccess.get()) {
+					LOGGER.warn("Job push failed! nodeGroup=" + nodeGroup + ", identity=" + identity + ", job=" + jobPo);
+					// 队列切回来
+					boolean needResume = true;
+					try {
+						jobPo.setIsRunning(true);
+						jobPo.setGmtModified(SystemClock.now());
+						appContext.getExecutableJobQueue().add(jobPo);
+					} catch (DupEntryException e) {
+						LOGGER.warn("ExecutableJobQueue already exist:" + JSON.toJSONString(jobPo));
+						needResume = false;
+					}
+					appContext.getExecutingJobQueue().remove(jobPo.getJobId());
+					if (needResume) {
+						appContext.getExecutableJobQueue().resume(jobPo);
+					}
+					return new JobSender.SendResult(false, JobPushResult.SENT_ERROR);
+				}
 
-                return new JobSender.SendResult(true, JobPushResult.SUCCESS);
-            }
-        });
+				return new JobSender.SendResult(true, JobPushResult.SUCCESS);
+			}
+		});
 
         return (JobPushResult) sendResult.getReturnValue();
     }

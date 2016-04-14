@@ -30,12 +30,12 @@ public class JobSender {
 
         // 从mongo 中取一个可运行的job
         final JobPo jobPo = appContext.getPreLoader().take(taskTrackerNodeGroup, taskTrackerIdentity);
-        if (jobPo == null) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Job push failed: no job! nodeGroup=" + taskTrackerNodeGroup + ", identity=" + taskTrackerIdentity);
-            }
-            return new SendResult(false, JobPushResult.NO_JOB);
-        }
+		if (jobPo == null) {
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Job push failed: no job! nodeGroup=" + taskTrackerNodeGroup + ", identity=" + taskTrackerIdentity);
+			}
+			return new SendResult(false, JobPushResult.NO_JOB);
+		}
 
         // IMPORTANT: 这里要先切换队列
         try {
@@ -46,9 +46,14 @@ public class JobSender {
             appContext.getExecutableJobQueue().resume(jobPo);
             return new SendResult(false, JobPushResult.FAILED);
         }
-        appContext.getExecutableJobQueue().remove(jobPo.getTaskTrackerNodeGroup(), jobPo.getJobId());
 
-		SendResult sendResult = new SendResult(false, "DEFAULT FALSE");
+		boolean removeSuccess = appContext.getExecutableJobQueue().remove(jobPo.getTaskTrackerNodeGroup(),
+				jobPo.getJobId());
+		if (!removeSuccess) {
+			return new SendResult(false, JobPushResult.FAILED);
+		}
+
+		SendResult sendResult = new SendResult(false, JobPushResult.SYSTEM_ERROR);
 		try {
 			sendResult = invoker.invoke(jobPo);
 		} catch (Exception e) {
@@ -63,7 +68,8 @@ public class JobSender {
             jobLogPo.setLogTime(SystemClock.now());
             jobLogPo.setLevel(Level.INFO);
             appContext.getJobLogger().log(jobLogPo);
-        } else {
+		} else if (sendResult.getReturnValue() == JobPushResult.SYSTEM_ERROR) {
+			LOGGER.warn("JobSender sendResult SENT_ERROR,jobPo:{}", jobPo);
 			// 记录日志
 			JobLogPo jobLogPo = JobDomainConverter.convertJobLog(jobPo);
 			jobLogPo.setSuccess(false);

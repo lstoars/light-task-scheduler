@@ -37,11 +37,11 @@ public class NodeApi extends AbstractMVC {
     public RestfulResponse getNodeList(NodePaginationReq request) {
         RestfulResponse response = new RestfulResponse();
 
-        List<Node> nodes = backendRegistrySrv.getOnlineNodes(request);
+		PaginationRsp<Node> rsp = backendRegistrySrv.pageSelectOnlineNodes(request);
 
         response.setSuccess(true);
-        response.setResults(CollectionUtils.sizeOf(nodes));
-        response.setRows(nodes);
+        response.setResults(rsp.getResults());
+        response.setRows(rsp.getRows());
 
         return response;
     }
@@ -57,12 +57,9 @@ public class NodeApi extends AbstractMVC {
     }
 
     @RequestMapping("node-group-get")
-    public RestfulResponse getNodeGroup(NodeGroupRequest request) {
+    public RestfulResponse getNodeGroup(NodeGroupGetRequest request) {
         RestfulResponse response = new RestfulResponse();
-        NodeGroupGetRequest nodeGroupGetRequest = new NodeGroupGetRequest();
-        nodeGroupGetRequest.setNodeGroup(request.getNodeGroup());
-        nodeGroupGetRequest.setNodeType(request.getNodeType());
-        PaginationRsp<NodeGroupPo> paginationRsp = appContext.getNodeGroupStore().getNodeGroup(nodeGroupGetRequest);
+        PaginationRsp<NodeGroupPo> paginationRsp = appContext.getNodeGroupStore().getNodeGroup(request);
 
         response.setResults(paginationRsp.getResults());
         response.setRows(paginationRsp.getRows());

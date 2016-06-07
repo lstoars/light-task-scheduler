@@ -2,6 +2,7 @@ package com.lts.admin.access.memory;
 
 import com.lts.admin.access.RshHandler;
 import com.lts.admin.request.NodePaginationReq;
+import com.lts.admin.response.PaginationRsp;
 import com.lts.core.cluster.Node;
 import com.lts.core.cluster.NodeType;
 import com.lts.core.commons.utils.CharacterUtils;
@@ -134,4 +135,38 @@ public class NodeMemCacheAccess extends MemoryAccess {
         return selectSql.limit(request.getStart(), request.getLimit())
                 .list(RshHandler.NODE_LIST_RSH);
     }
+
+	public PaginationRsp<Node> pageSearch(NodePaginationReq request) {
+		PaginationRsp<Node> response = new PaginationRsp();
+		WhereSql whereSql = new WhereSql()
+				.andOnNotEmpty("identity = ?", request.getIdentity())
+				.andOnNotEmpty("node_group = ?", request.getNodeGroup())
+				.andOnNotNull("node_type = ?", request.getNodeType() == null ? null : request.getNodeType().name())
+				.andOnNotEmpty("ip = ?", request.getIp())
+				.andOnNotNull("available = ?", request.getAvailable())
+				.andBetween("create_time", JdbcTypeUtils.toTimestamp(request.getStartDate()), JdbcTypeUtils.toTimestamp(request.getEndDate()));
+
+		Long results = new SelectSql(getSqlTemplate())
+				.select()
+				.columns("count(1)")
+				.from()
+				.table(getTableName())
+				.whereSql(whereSql)
+				.single();
+		response.setResults(results.intValue());
+
+		SelectSql selectSql = new SelectSql(getSqlTemplate())
+				.select()
+				.all()
+				.from()
+				.table(getTableName())
+				.whereSql(whereSql);
+		if (StringUtils.isNotEmpty(request.getField())) {
+			selectSql.orderBy()
+					.column(CharacterUtils.camelCase2Underscore(request.getField()), OrderByType.convert(request.getDirection()));
+		}
+		response.setRows(selectSql.limit(request.getStart(), request.getLimit())
+				.list(RshHandler.NODE_LIST_RSH));
+		return response;
+	}
 }

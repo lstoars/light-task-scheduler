@@ -2,6 +2,7 @@ package com.lts.admin.cluster;
 
 import com.lts.admin.access.domain.NodeOnOfflineLog;
 import com.lts.admin.request.NodePaginationReq;
+import com.lts.admin.response.PaginationRsp;
 import com.lts.core.cluster.Node;
 import com.lts.core.commons.utils.CollectionUtils;
 import com.lts.core.logger.Logger;
@@ -45,6 +46,11 @@ public class BackendRegistrySrv implements InitializingBean {
     public List<Node> getOnlineNodes(NodePaginationReq request) {
         return appContext.getNodeMemCacheAccess().search(request);
     }
+
+	public PaginationRsp<Node> pageSelectOnlineNodes(NodePaginationReq request){
+		return appContext.getNodeMemCacheAccess().pageSearch(request);
+	}
+
 
     /**
      * 记录节点上下线日志

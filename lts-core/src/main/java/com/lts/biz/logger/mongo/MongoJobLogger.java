@@ -8,9 +8,11 @@ import com.lts.core.cluster.Config;
 import com.lts.core.commons.utils.CollectionUtils;
 import com.lts.core.commons.utils.StringUtils;
 import com.lts.admin.response.PaginationRsp;
+import com.lts.queue.domain.JobPo;
 import com.lts.store.mongo.MongoRepository;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import com.mongodb.WriteResult;
 import org.mongodb.morphia.query.Query;
 
 import java.util.Date;
@@ -81,7 +83,14 @@ public class MongoJobLogger extends MongoRepository implements JobLogger {
         return paginationRsp;
     }
 
-    private Long getTimestamp(Date timestamp) {
+	@Override
+	public void delete(JobLoggerRequest request) {
+		Query<JobPo> query = template.createQuery(JobPo.class);
+		query.filter("logTime <= ", getTimestamp(request.getEndLogTime()));
+		template.delete(query);
+	}
+
+	private Long getTimestamp(Date timestamp) {
         if (timestamp == null) {
             return null;
         }

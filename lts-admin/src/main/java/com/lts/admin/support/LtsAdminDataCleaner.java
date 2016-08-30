@@ -4,6 +4,7 @@ import com.lts.admin.cluster.BackendAppContext;
 import com.lts.admin.request.JvmDataReq;
 import com.lts.admin.request.MDataPaginationReq;
 import com.lts.admin.request.NodeOnOfflineLogPaginationReq;
+import com.lts.biz.logger.domain.JobLoggerRequest;
 import com.lts.core.commons.utils.Callable;
 import com.lts.core.commons.utils.DateUtils;
 import com.lts.core.commons.utils.QuietUtils;
@@ -90,11 +91,11 @@ public class LtsAdminDataCleaner implements InitializingBean {
         final JvmDataReq jvmDataReq = new JvmDataReq();
         jvmDataReq.setEndTime(DateUtils.addDay(new Date(), -3).getTime());
         QuietUtils.doWithWarn(new Callable() {
-            @Override
-            public void call() throws Exception {
-                appContext.getBackendJVMGCAccess().delete(jvmDataReq);
-            }
-        });
+			@Override
+			public void call() throws Exception {
+				appContext.getBackendJVMGCAccess().delete(jvmDataReq);
+			}
+		});
         QuietUtils.doWithWarn(new Callable() {
             @Override
             public void call() throws Exception {
@@ -107,6 +108,16 @@ public class LtsAdminDataCleaner implements InitializingBean {
                 appContext.getBackendJVMMemoryAccess().delete(jvmDataReq);
             }
         });
+
+		// 4.清理30天前的执行日志信息
+		final JobLoggerRequest jobLoggerReq = new JobLoggerRequest();
+		jobLoggerReq.setEndLogTime(DateUtils.addDay(new Date(), -30));
+		QuietUtils.doWithWarn(new Callable() {
+			@Override
+			public void call() throws Exception {
+				appContext.getJobLogger().delete(jobLoggerReq);
+			}
+		});
 
         LOGGER.info("Clean monitor data succeed ");
     }

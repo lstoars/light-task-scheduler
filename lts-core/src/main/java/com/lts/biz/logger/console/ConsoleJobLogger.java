@@ -34,4 +34,9 @@ public class ConsoleJobLogger implements JobLogger {
         throw new UnsupportedOperationException("Console logger dose not support this operation!");
     }
 
+	@Override
+	public void delete(JobLoggerRequest request) {
+		throw new UnsupportedOperationException("Console logger dose not support this operation!");
+	}
+
 }

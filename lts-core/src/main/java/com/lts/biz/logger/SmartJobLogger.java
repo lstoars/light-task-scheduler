@@ -174,4 +174,9 @@ public class SmartJobLogger implements JobLogger {
         return jobLogger.search(request);
     }
 
+	@Override
+	public void delete(JobLoggerRequest request) {
+		jobLogger.delete(request);
+	}
+
 }

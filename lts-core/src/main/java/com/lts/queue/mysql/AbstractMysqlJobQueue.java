@@ -21,109 +21,84 @@ import java.util.List;
  */
 public abstract class AbstractMysqlJobQueue extends JdbcAbstractAccess implements JobQueue {
 
-    public AbstractMysqlJobQueue(Config config) {
-        super(config);
-    }
+	public AbstractMysqlJobQueue(Config config) {
+		super(config);
+	}
 
-    protected boolean add(String tableName, JobPo jobPo) {
-        return new InsertSql(getSqlTemplate())
-                .insert(tableName)
-                .columns("job_id",
-                        "priority",
-                        "retry_times",
-                        "max_retry_times",
-                        "task_id",
-                        "gmt_created",
-                        "gmt_modified",
-                        "submit_node_group",
-                        "task_tracker_node_group",
-                        "ext_params",
-                        "is_running",
-                        "task_tracker_identity",
-                        "need_feedback",
-                        "cron_expression",
-                        "trigger_time")
-                .values(jobPo.getJobId(),
-                        jobPo.getPriority(),
-                        jobPo.getRetryTimes(),
-                        jobPo.getMaxRetryTimes(),
-                        jobPo.getTaskId(),
-                        jobPo.getGmtCreated(),
-                        jobPo.getGmtModified(),
-                        jobPo.getSubmitNodeGroup(),
-                        jobPo.getTaskTrackerNodeGroup(),
-                        JSON.toJSONString(jobPo.getExtParams()),
-                        jobPo.isRunning(),
-                        jobPo.getTaskTrackerIdentity(),
-                        jobPo.isNeedFeedback(),
-                        jobPo.getCronExpression(),
-                        jobPo.getTriggerTime())
-                .doInsert() == 1;
-    }
+	protected boolean add(String tableName, JobPo jobPo) {
+		return new InsertSql(getSqlTemplate())
+				.insert(tableName)
+				.columns("job_id", "priority", "retry_times", "max_retry_times", "task_id", "gmt_created",
+						"gmt_modified", "submit_node_group", "task_tracker_node_group", "ext_params", "is_running",
+						"task_tracker_identity", "need_feedback", "cron_expression", "trigger_time")
+				.values(jobPo.getJobId(), jobPo.getPriority(), jobPo.getRetryTimes(), jobPo.getMaxRetryTimes(),
+						jobPo.getTaskId(), jobPo.getGmtCreated(), jobPo.getGmtModified(), jobPo.getSubmitNodeGroup(),
+						jobPo.getTaskTrackerNodeGroup(), JSON.toJSONString(jobPo.getExtParams()), jobPo.isRunning(),
+						jobPo.getTaskTrackerIdentity(), jobPo.isNeedFeedback(), jobPo.getCronExpression(),
+						jobPo.getTriggerTime()).doInsert() == 1;
+	}
 
-    public PaginationRsp<JobPo> pageSelect(JobQueueReq request) {
+	public PaginationRsp<JobPo> pageSelect(JobQueueReq request) {
 
-        PaginationRsp<JobPo> response = new PaginationRsp<JobPo>();
+		PaginationRsp<JobPo> response = new PaginationRsp<JobPo>();
 
-        WhereSql whereSql = buildWhereSql(request);
+		WhereSql whereSql = buildWhereSql(request);
 
-        Long results = new SelectSql(getSqlTemplate())
-                .select()
-                .columns("count(1)")
-                .from()
-                .table(getTableName(request))
-                .whereSql(whereSql)
-                .single();
-        response.setResults(results.intValue());
+		Long results = new SelectSql(getSqlTemplate()).select().columns("count(1)").from().table(getTableName(request))
+				.whereSql(whereSql).single();
+		response.setResults(results.intValue());
 
-        if (results > 0) {
+		if (results > 0) {
 
-            List<JobPo> jobPos = new SelectSql(getSqlTemplate())
-                    .select()
-                    .all()
-                    .from()
-                    .table(getTableName(request))
-                    .whereSql(whereSql)
-                    .orderBy()
-                    .column(CharacterUtils.camelCase2Underscore(request.getField()), OrderByType.convert(request.getDirection()))
-                    .limit(request.getStart(), request.getLimit())
-                    .list(RshHolder.JOB_PO_LIST_RSH);
-            response.setRows(jobPos);
-        }
-        return response;
-    }
+			List<JobPo> jobPos = new SelectSql(getSqlTemplate())
+					.select()
+					.all()
+					.from()
+					.table(getTableName(request))
+					.whereSql(whereSql)
+					.orderBy()
+					.column(CharacterUtils.camelCase2Underscore(request.getField()),
+							OrderByType.convert(request.getDirection())).limit(request.getStart(), request.getLimit())
+					.list(RshHolder.JOB_PO_LIST_RSH);
+			response.setRows(jobPos);
+		}
+		return response;
+	}
 
-    protected abstract String getTableName(JobQueueReq request);
+	protected abstract String getTableName(JobQueueReq request);
 
-    public boolean selectiveUpdate(JobQueueReq request) {
+	public boolean selectiveUpdate(JobQueueReq request) {
 
-        if (StringUtils.isEmpty(request.getJobId())) {
-            throw new JdbcException("Only allow update by jobId");
-        }
-        return new UpdateSql(getSqlTemplate())
-                .update()
-                .table(getTableName(request))
-                .setOnNotNull("cron_expression", request.getCronExpression())
-                .setOnNotNull("need_feedback", request.getNeedFeedback())
-                .set("ext_params", JSON.toJSONString(request.getExtParams()))
-                .setOnNotNull("trigger_time", JdbcTypeUtils.toTimestamp(request.getTriggerTime()))
-                .setOnNotNull("priority", request.getPriority())
-                .setOnNotNull("max_retry_times", request.getMaxRetryTimes())
-                .setOnNotNull("submit_node_group", request.getSubmitNodeGroup())
-                .setOnNotNull("task_tracker_node_group", request.getTaskTrackerNodeGroup())
-                .where("job_id=?", request.getJobId())
-                .doUpdate() == 1;
-    }
+		if (StringUtils.isEmpty(request.getJobId())) {
+			throw new JdbcException("Only allow update by jobId");
+		}
+		return new UpdateSql(getSqlTemplate()).update().table(getTableName(request))
+				.setOnNotNull("cron_expression", request.getCronExpression())
+				.setOnNotNull("need_feedback", request.getNeedFeedback())
+				.set("ext_params", JSON.toJSONString(request.getExtParams()))
+				.setOnNotNull("trigger_time", JdbcTypeUtils.toTimestamp(request.getTriggerTime()))
+				.setOnNotNull("priority", request.getPriority())
+				.setOnNotNull("max_retry_times", request.getMaxRetryTimes())
+				.setOnNotNull("submit_node_group", request.getSubmitNodeGroup())
+				.setOnNotNull("task_tracker_node_group", request.getTaskTrackerNodeGroup())
+				.where("job_id=?", request.getJobId()).doUpdate() == 1;
+	}
 
-    private WhereSql buildWhereSql(JobQueueReq request) {
-        return new WhereSql()
-                .andOnNotEmpty("job_id = ?", request.getJobId())
-                .andOnNotEmpty("task_id like ?", request.getTaskId()+"%")
-                .andOnNotEmpty("task_tracker_node_group = ?", request.getTaskTrackerNodeGroup())
-                .andOnNotEmpty("submit_node_group = ?", request.getSubmitNodeGroup())
-                .andOnNotNull("need_feedback = ?", request.getNeedFeedback())
-                .andBetween("gmt_created", JdbcTypeUtils.toTimestamp(request.getStartGmtCreated()), JdbcTypeUtils.toTimestamp(request.getEndGmtCreated()))
-                .andBetween("gmt_modified", JdbcTypeUtils.toTimestamp(request.getStartGmtModified()), JdbcTypeUtils.toTimestamp(request.getEndGmtModified()));
-    }
+	private WhereSql buildWhereSql(JobQueueReq request) {
+		WhereSql whereSql = new WhereSql();
+		whereSql.andOnNotEmpty("job_id = ?", request.getJobId());
+		if (StringUtils.isNotEmpty(request.getTaskId())) {
+			whereSql.andOnNotEmpty("task_id like ?", "%" + request.getTaskId() + "%");
+		}
+
+		whereSql.andOnNotEmpty("task_tracker_node_group = ?", request.getTaskTrackerNodeGroup())
+				.andOnNotEmpty("submit_node_group = ?", request.getSubmitNodeGroup())
+				.andOnNotNull("need_feedback = ?", request.getNeedFeedback())
+				.andBetween("gmt_created", JdbcTypeUtils.toTimestamp(request.getStartGmtCreated()),
+						JdbcTypeUtils.toTimestamp(request.getEndGmtCreated()))
+				.andBetween("gmt_modified", JdbcTypeUtils.toTimestamp(request.getStartGmtModified()),
+						JdbcTypeUtils.toTimestamp(request.getEndGmtModified()));
+		return whereSql;
+	}
 
 }

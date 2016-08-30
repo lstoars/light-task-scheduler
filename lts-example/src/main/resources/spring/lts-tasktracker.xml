@@ -18,7 +18,7 @@
         <property name="jobRunnerClass" value="com.lts.example.support.SpringAnnotationJobRunner"/>
         <property name="bizLoggerLevel" value="INFO"/>
         <property name="clusterName" value="test_cluster"/>
-        <property name="registryAddress" value="zookeeper://127.0.0.1:2181"/>
+        <property name="registryAddress" value="zookeeper://172.16.2.86:2181"/>
         <property name="nodeGroup" value="test_trade_TaskTracker"/>
         <property name="workThreads" value="20"/>
         <property name="masterChangeListeners">

@@ -129,7 +129,7 @@ public class MysqlJobLogger extends JdbcAbstractAccess implements JobLogger {
 
     private WhereSql buildWhereSql(JobLoggerRequest request) {
         return new WhereSql()
-                .andOnNotEmpty("task_id = ?", request.getTaskId())
+                .andOnNotEmpty("task_id like ?", request.getTaskId()+"%")
                 .andOnNotEmpty("task_tracker_node_group = ?", request.getTaskTrackerNodeGroup())
 				.andOnNotEmpty("log_type = ?",request.getLogType())
 				.andOnNotEmpty("success = ?",request.getSuccessStr())

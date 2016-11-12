@@ -94,7 +94,7 @@ public class MysqlJobLogger extends JdbcAbstractAccess implements JobLogger {
 	private WhereSql buildWhereSql(JobLoggerRequest request) {
 		WhereSql whereSql = new WhereSql();
 		if (StringUtils.isNotEmpty(request.getTaskId())) {
-			whereSql.andOnNotEmpty("task_id like ?", "%" + request.getTaskId() + "%");
+			whereSql.andOnNotEmpty("task_id like ?", "%" + request.getTaskId());
 		}
 		whereSql.andOnNotEmpty("task_tracker_node_group = ?", request.getTaskTrackerNodeGroup())
 				.andOnNotEmpty("log_type = ?", request.getLogType())

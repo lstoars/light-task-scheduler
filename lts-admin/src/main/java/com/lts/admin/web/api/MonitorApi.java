@@ -1,6 +1,7 @@
 package com.lts.admin.web.api;
 
 import com.lts.admin.cluster.BackendAppContext;
+import com.lts.admin.request.JobQueueReq;
 import com.lts.admin.request.MDataPaginationReq;
 import com.lts.admin.response.PaginationRsp;
 import com.lts.admin.web.AbstractMVC;
@@ -136,7 +137,7 @@ public class MonitorApi extends AbstractMVC {
 		List<Map<String, String>> rows = new ArrayList<Map<String, String>>();
 		for (NodeGroupPo groupPo : ngpos) {
 			List<JobPo> jobPos = appContext.getExecutableJobQueue().getJob(groupPo.getName(),
-					DateUtils.addMinute(DateUtils.now(), -10));
+					DateUtils.addMinute(DateUtils.now(), -60));
 			if (CollectionUtils.isNotEmpty(jobPos)) {
 				for (JobPo job : jobPos) {
 					Map<String, String> map = new LinkedHashMap<String, String>();
@@ -151,6 +152,38 @@ public class MonitorApi extends AbstractMVC {
 		} else {
 			response.setSuccess(false);
 			response.setResults(rows.size());
+			response.setRows(rows);
+		}
+		return response;
+	}
+
+	@RequestMapping("/monitor/monitor-run-too-long-job")
+	public RestfulResponse monitorRunTooLongJob() {
+		RestfulResponse response = new RestfulResponse();
+		JobQueueReq req = new JobQueueReq();
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.MINUTE,-5);
+		req.setTriggerTime(calendar.getTime());
+		req.setLimit(20);
+		PaginationRsp<JobPo> jobs = appContext.getExecutingJobQueue().pageSelect(req);
+		if(CollectionUtils.isEmpty(jobs.getRows())) {
+			response.setSuccess(true);
+			return response;
+		}
+
+		List<Map<String, String>> rows = new ArrayList<Map<String, String>>();
+		for (JobPo job : jobs.getRows()) {
+			Map<String, String> map = new LinkedHashMap<String, String>();
+			map.put("taskId", job.getTaskId());
+			map.put("time", DateUtils.format(new Date(job.getTriggerTime()), DateUtils.YMD_HMS));
+			rows.add(map);
+		}
+
+		if (CollectionUtils.isEmpty(rows)) {
+			response.setSuccess(true);
+		} else {
+			response.setSuccess(false);
+			response.setResults(jobs.getRows().size());
 			response.setRows(rows);
 		}
 		return response;

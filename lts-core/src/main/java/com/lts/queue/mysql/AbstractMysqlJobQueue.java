@@ -98,6 +98,9 @@ public abstract class AbstractMysqlJobQueue extends JdbcAbstractAccess implement
 						JdbcTypeUtils.toTimestamp(request.getEndGmtCreated()))
 				.andBetween("gmt_modified", JdbcTypeUtils.toTimestamp(request.getStartGmtModified()),
 						JdbcTypeUtils.toTimestamp(request.getEndGmtModified()));
+		if(request.getTriggerTime() != null) {
+			whereSql.andOnNotNull("trigger_time < ? ",JdbcTypeUtils.toTimestamp(request.getTriggerTime()));
+		}
 		return whereSql;
 	}
 
